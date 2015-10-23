@@ -1,50 +1,94 @@
 module Enumerable
-	def my_each
-		0.upto(self.length - 1) do |index|
-			yield(self[index])
+	def my_each(&block)
+		if self.instance_of?(Hash)
+			pairs = []
+			self.keys.my_each do |key| 
+				pairs << [key, self[key]]
+			end
+			pairs.my_each(&block)
+		else
+			0.upto(self.length - 1) do |index|
+				yield(self[index])
+			end
 		end
+		self
 	end
 
-	def my_each_with_index
-		0.upto(self.length - 1) do |index|
-			yield(self[index], index)
+	def my_each_with_index(&block)
+		if self.instance_of?(Hash)
+			pairs = []
+			self.keys.my_each do |key| 
+				pairs << [key, self[key]]
+			end
+			pairs.my_each_with_index(&block)
+		else
+			0.upto(self.length - 1) do |index|
+				yield(self[index], index)
+			end
 		end
+		self
 	end
 
 	def my_select
 		results = []
 		self.my_each do |item|
-			if yield(item)
-				results << item
+			if self.instance_of?(Hash)
+				if yield(item[0], item[1])
+					results << item
+				end
+			else
+				if yield(item)
+					results << item
+				end
 			end
 		end
+
+		if self.instance_of?(Hash)
+			results_hash = {}
+			results.my_each do |pair|
+				results_hash[pair[0]] = pair[1]
+			end
+			results = results_hash
+		end
+
 		results
 	end
 
-	def my_all?
-		self.my_select{|item| yield(item)} == self
+	def my_all?(&block)
+		self.my_select(&block) == self
 	end
 
-	def my_any?
-		self.my_select{|item| yield(item)}.length > 0
+	def my_any?(&block)
+		self.my_select(&block).length > 0
 	end
 
-	def my_none?
-		!(self.my_any?{|item| yield(item)})
+	def my_none?(&block)
+		!(self.my_any?(&block))
 	end
 
 	def my_count(*targets, &block)
+		count = 0
 		if targets.length == 1
 			if block_given?
 				puts "warning: given block not used"
 			end
-			return self.my_select{|item| item == targets[0]}.length
+			self.my_each do |item|
+				if item == targets[0]
+					count += 1
+				end
+			end
+			return count
 		elsif targets.length == 0 && !block_given?
 			return self.length
 		elsif targets.length > 1
 			raise ArgumentError, "wrong number of arugments (#{targets.length} for 1)"
-		else
-			return self.my_select(&block).length
+		else # no targets, and block given
+			self.my_each do |item|
+				if yield(item)
+					count += 1
+				end
+			end
+			return count
 		end
 	end
 
@@ -98,13 +142,21 @@ module Enumerable
 		if initials.length == 1
 			result = initials[0]
 		elsif initials.length == 0
-			result = self[0]
+			if self.instance_of?(Hash)
+				result = [self.keys[0], self[self.keys[0]]]
+			else
+				result = self[0]
+			end
 		else
 			raise ArgumentError, "wrong number of arugments (#{initials.length} for 1)"
 		end
 
+		is_first_item = true
 		self.my_each do |item|
-				result = yield(result, item)	
+			unless initials.length == 0 && is_first_item
+				result = yield(result, item)
+			end
+			is_first_item = false
 		end
 
 		return result
