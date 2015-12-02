@@ -100,21 +100,19 @@ module Enumerable
 		results
 	end
 
-=begin
 	#this my_map takes a proc instead of a block
-	def my_map(proc)
+	def my_map_p(proc)
 		results = []
 		self.my_each do |item|
 			results << proc.call(item)
 		end
 		results
 	end
-=end
 
-=begin
+
 	#this my_map takes a proc, and can also take a block
 	#the block will only execute if a proc has been supplied
-	def my_map(*procs)
+	def my_map_pb(*procs)
 		results = []
 		block_results = []
 		if procs.length == 1
@@ -135,7 +133,6 @@ module Enumerable
 		end
 		results
 	end
-=end
 
 	#this version of inject does not deal with symbols; the block is required
 	def my_inject(*initials)
@@ -144,6 +141,7 @@ module Enumerable
 		elsif initials.length == 0
 			if self.instance_of?(Hash)
 				result = [self.keys[0], self[self.keys[0]]]
+				result = nil if self == {}
 			else
 				result = self[0]
 			end
